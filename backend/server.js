@@ -18,30 +18,6 @@ const PORT = 3000;
 
 app.use(express.json());
 
-const restaurants = [
-    {
-        id: 1,
-        name: "FoodKart Kitchen",
-        cuisine: "Indian",
-        location: "Mumbai",
-        rating: 4.5
-    },
-    {
-        id: 2,
-        name: "Spice House",
-        cuisine: "North Indian",
-        location: "Pune",
-        rating: 4.3
-    },
-    {
-        id: 3,
-        name: "Tandoori Hub",
-        cuisine: "Mughlai",
-        location: "Mumbai",
-        rating: 4.6
-    }
-];
-
 
 app.get("/api/health", async (req, res) => {
     try {
@@ -79,20 +55,32 @@ app.get("/api/restaurants", async (req, res) => {
     }
 });
 
-app.get("/api/restaurants/:id", (req, res) => {
-    const restaurantId = Number(req.params.id);
+app.get("/api/restaurants/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
 
-    const restaurant = restaurants.find(
-        (restaurant) => restaurant.id === restaurantId
-    );
+        const result = await pool.query(
+            `SELECT id, name, address
+             FROM restaurants
+             WHERE id = $1`,
+            [id]
+        );
 
-    if (!restaurant) {
-        return res.status(404).json({
-            message: "Restaurant not found"
+        if (result.rows.length === 0) {
+            return res.status(404).json({
+                message: "Restaurant not found"
+            });
+        }
+
+        res.json(result.rows[0]);
+
+    } catch (error) {
+        console.error("Error fetching restaurant:", error);
+
+        res.status(500).json({
+            message: "Failed to fetch restaurant"
         });
     }
-
-    res.json(restaurant);
 });
 
 app.get("/api/restaurants/:id/menu", async (req, res) => {

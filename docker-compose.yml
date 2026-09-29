@@ -1,0 +1,36 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: foodkart-postgres
+
+    environment:
+      POSTGRES_USER: foodkart
+      POSTGRES_PASSWORD: foodkart123
+      POSTGRES_DB: foodkart
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - foodkart-postgres-data:/var/lib/postgresql/data
+
+  backend:
+    build: ./backend
+    container_name: foodkart-backend
+
+    ports:
+      - "3000:3000"
+
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: foodkart
+      DB_PASSWORD: foodkart123
+      DB_NAME: foodkart
+
+    depends_on:
+      - postgres
+
+volumes:
+  foodkart-postgres-data:
+    external: true
