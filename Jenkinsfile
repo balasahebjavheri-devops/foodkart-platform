@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    tools {
+        nodejs 'Node24'
+    }
+
     stages {
         stage('Checkout') {
             steps {
@@ -8,15 +12,23 @@ pipeline {
             }
         }
 
+        stage('Install Dependencies') {
+            steps {
+                dir('backend') {
+                    sh 'npm ci'
+                }
+            }
+        }
+
         stage('Build') {
             steps {
-                echo 'Building FoodKart application...'
+                echo 'FoodKart application build completed.'
             }
         }
 
         stage('Test') {
             steps {
-                echo 'Running FoodKart tests...'
+                echo 'FoodKart tests will be added here.'
             }
         }
     }
