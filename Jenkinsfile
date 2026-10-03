@@ -28,8 +28,10 @@ pipeline {
 
         stage('Test') {
             steps {
-                echo 'FoodKart tests will be added here.'
-            }
+              dir('backend') {
+                    sh 'npm test'
+                }
+           }
         }
     }
 }
