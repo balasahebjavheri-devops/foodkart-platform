@@ -56,5 +56,18 @@ pipeline {
         '''
           }
        }
+       stage('Health Check') {
+    steps {
+        sh '''
+            echo "Waiting for application to start..."
+            sleep 5
+
+            echo "Running FoodKart health check..."
+            curl --fail http://foodkart-backend-jenkins:3000/api/health
+
+            echo "FoodKart deployment health check passed."
+        '''
+    }
+}
     }
 }
