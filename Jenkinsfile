@@ -38,5 +38,23 @@ pipeline {
         sh 'docker build -t foodkart-backend:jenkins-build ./backend'
            }
         }
+        stage('Docker Deploy') {
+            steps {
+            sh '''
+            docker rm -f foodkart-backend-jenkins || true
+
+            docker run -d \
+                --name foodkart-backend-jenkins \
+                --network foodkart-platform_default \
+                -e DB_HOST=postgres \
+                -e DB_PORT=5432 \
+                -e DB_USER=foodkart \
+                -e DB_PASSWORD=foodkart123 \
+                -e DB_NAME=foodkart \
+                -p 3001:3000 \
+                foodkart-backend:jenkins-build
+        '''
+          }
+       }
     }
 }
