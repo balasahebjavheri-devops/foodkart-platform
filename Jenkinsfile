@@ -35,7 +35,7 @@ pipeline {
         }
         stage('Docker Build') {
             steps {
-        sh 'docker build -t foodkart-backend:jenkins-build ./backend'
+        sh 'docker build -t foodkart-backend:build-${BUILD_NUMBER} ./backend'
            }
         }
         stage('Docker Deploy') {
@@ -52,7 +52,7 @@ pipeline {
                 -e DB_PASSWORD=foodkart123 \
                 -e DB_NAME=foodkart \
                 -p 3001:3000 \
-                foodkart-backend:jenkins-build
+                foodkart-backend:build-${BUILD_NUMBER}
         '''
           }
        }
