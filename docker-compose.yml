@@ -8,8 +8,6 @@ services:
       POSTGRES_PASSWORD: foodkart123
       POSTGRES_DB: foodkart
 
-    ports:
-      - "5432:5432"
 
     volumes:
       - foodkart-postgres-data:/var/lib/postgresql/data
