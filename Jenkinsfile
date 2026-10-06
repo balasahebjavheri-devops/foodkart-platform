@@ -47,12 +47,6 @@ pipeline {
             }
         }
 
-        stage('Docker Build') {
-            steps {
-                sh 'docker build -t foodkart-backend:build-${BUILD_NUMBER} ./backend'
-            }
-        }
-
         stage('Deploy to AWS EC2') {
             steps {
                 sshagent(['foodkart-ec2-key']) {
