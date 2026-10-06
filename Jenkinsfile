@@ -50,86 +50,37 @@ pipeline {
         sh 'docker build -t foodkart-backend:build-${BUILD_NUMBER} ./backend'
            }
         }
-stage('Docker Deploy') {
+stage('Deploy to AWS EC2') {
     steps {
-        sh '''
-            echo "Checking current deployment..."
+        sshagent(['foodkart-ec2-key']) {
+            sh '''
+                ssh -o StrictHostKeyChecking=no ec2-user@13.235.42.162 << 'EOF'
 
-            PREVIOUS_IMAGE=$(docker inspect foodkart-backend-jenkins \
-                --format '{{.Config.Image}}' 2>/dev/null || true)
+                set -e
 
-            echo "Previous image: ${PREVIOUS_IMAGE}"
+                echo "Connecting to AWS EC2..."
 
-            echo "${PREVIOUS_IMAGE}" > previous_image.txt
+                cd ~/foodkart-platform
 
-            echo "Deploying new image..."
+                echo "Pulling latest code..."
+                git pull origin main
 
-            docker rm -f foodkart-backend-jenkins || true
+                echo "Rebuilding and restarting FoodKart..."
+                docker-compose up -d --build
 
-            docker run -d \
-                --name foodkart-backend-jenkins \
-                --network foodkart-platform_default \
-                -e DB_HOST=postgres \
-                -e DB_PORT=5432 \
-                -e DB_USER=foodkart \
-                -e DB_PASSWORD=foodkart123 \
-                -e DB_NAME=foodkart \
-                -p 3001:3000 \
-                foodkart-backend:build-${BUILD_NUMBER}
-        '''
-    }
-}
+                echo "Checking containers..."
+                docker-compose ps
 
-stage('Health Check') {
-    steps {
-        script {
-            try {
-                sh '''
-                    echo "Waiting for application to start..."
-                    sleep 5
+                echo "Waiting for application..."
+                sleep 5
 
-                    echo "Running FoodKart health check..."
+                echo "Running health check..."
+                curl --fail http://localhost:3000/api/health
 
-                    curl --fail http://foodkart-backend-jenkins:3000/api/health
+                echo "AWS FoodKart deployment successful."
 
-                    echo "FoodKart deployment health check passed."
-                '''
-            } catch (Exception e) {
-
-                echo "Health check FAILED. Starting rollback..."
-
-                sh '''
-                    PREVIOUS_IMAGE=$(cat previous_image.txt)
-
-                    echo "Previous image: ${PREVIOUS_IMAGE}"
-
-                    if [ -n "$PREVIOUS_IMAGE" ]; then
-
-                        echo "Removing unhealthy deployment..."
-                        docker rm -f foodkart-backend-jenkins || true
-
-                        echo "Starting previous version..."
-
-                        docker run -d \
-                            --name foodkart-backend-jenkins \
-                            --network foodkart-platform_default \
-                            -e DB_HOST=postgres \
-                            -e DB_PORT=5432 \
-                            -e DB_USER=foodkart \
-                            -e DB_PASSWORD=foodkart123 \
-                            -e DB_NAME=foodkart \
-                            -p 3001:3000 \
-                            "$PREVIOUS_IMAGE"
-
-                        echo "Rollback completed."
-
-                    else
-                        echo "No previous image found. Rollback skipped."
-                    fi
-                '''
-
-                error("Deployment failed. Rollback completed.")
-            }
+                EOF
+            '''
         }
     }
 }
