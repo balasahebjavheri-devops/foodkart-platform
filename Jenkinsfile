@@ -6,6 +6,7 @@ pipeline {
     }
 
     stages {
+
         stage('Checkout') {
             steps {
                 checkout scm
@@ -13,16 +14,16 @@ pipeline {
         }
 
         stage('Test EC2 SSH') {
-    steps {
-        sshagent(['foodkart-ec2-key']) {
-            sh '''
-                ssh -o StrictHostKeyChecking=no \
-                    ec2-user@13.235.42.162 \
-                    "echo EC2_CONNECTION_SUCCESSFUL"
-            '''
+            steps {
+                sshagent(['foodkart-ec2-key']) {
+                    sh '''
+                        ssh -o StrictHostKeyChecking=no \
+                            ec2-user@13.235.42.162 \
+                            "echo EC2_CONNECTION_SUCCESSFUL"
+                    '''
+                }
+            }
         }
-    }
-}
 
         stage('Install Dependencies') {
             steps {
@@ -40,49 +41,49 @@ pipeline {
 
         stage('Test') {
             steps {
-              dir('backend') {
+                dir('backend') {
                     sh 'npm test'
                 }
-           }
+            }
         }
+
         stage('Docker Build') {
             steps {
-        sh 'docker build -t foodkart-backend:build-${BUILD_NUMBER} ./backend'
-           }
+                sh 'docker build -t foodkart-backend:build-${BUILD_NUMBER} ./backend'
+            }
         }
-stage('Deploy to AWS EC2') {
-    steps {
-        sshagent(['foodkart-ec2-key']) {
-            sh '''
-                ssh -o StrictHostKeyChecking=no ec2-user@13.235.42.162 << 'EOF'
 
-                set -e
+        stage('Deploy to AWS EC2') {
+            steps {
+                sshagent(['foodkart-ec2-key']) {
+                    sh '''
+                        ssh -o StrictHostKeyChecking=no ec2-user@13.235.42.162 "
+                            set -e
 
-                echo "Connecting to AWS EC2..."
+                            echo 'Connecting to AWS EC2...'
 
-                cd ~/foodkart-platform
+                            cd ~/foodkart-platform
 
-                echo "Pulling latest code..."
-                git pull origin main
+                            echo 'Pulling latest code...'
+                            git pull origin main
 
-                echo "Rebuilding and restarting FoodKart..."
-                docker-compose up -d --build
+                            echo 'Rebuilding and restarting FoodKart...'
+                            docker-compose up -d --build
 
-                echo "Checking containers..."
-                docker-compose ps
+                            echo 'Checking containers...'
+                            docker-compose ps
 
-                echo "Waiting for application..."
-                sleep 5
+                            echo 'Waiting for application...'
+                            sleep 5
 
-                echo "Running health check..."
-                curl --fail http://localhost:3000/api/health
+                            echo 'Running health check...'
+                            curl --fail http://localhost:3000/api/health
 
-                echo "AWS FoodKart deployment successful."
-
-                EOF
-            '''
+                            echo 'AWS FoodKart deployment successful.'
+                        "
+                    '''
+                }
+            }
         }
-    }
-}
     }
 }
