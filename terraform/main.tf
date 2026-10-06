@@ -108,6 +108,12 @@ resource "aws_instance" "foodkart_server" {
   ami           = data.aws_ami.amazon_linux.id
   instance_type = "t3.micro"
 
+  lifecycle {
+  ignore_changes = [
+    ami
+  ]
+}
+
   key_name = "foodkart-key"
 
   subnet_id = aws_subnet.foodkart_public_subnet.id
