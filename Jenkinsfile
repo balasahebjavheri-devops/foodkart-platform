@@ -12,6 +12,18 @@ pipeline {
             }
         }
 
+        stage('Test EC2 SSH') {
+    steps {
+        sshagent(['foodkart-ec2-key']) {
+            sh '''
+                ssh -o StrictHostKeyChecking=no \
+                    ec2-user@13.235.42.162 \
+                    "echo EC2_CONNECTION_SUCCESSFUL"
+            '''
+        }
+    }
+}
+
         stage('Install Dependencies') {
             steps {
                 dir('backend') {
